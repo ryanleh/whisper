@@ -27,3 +27,7 @@ prio = {version = "0.15", path = "../batched-flpcp-rs"}
 [features]
 default =  []# ["streaming"]
 streaming = [] # no communication for debugging
+
+[[bin]]
+name = "benchmarks"
+path = "src/bin/benchmarks.rs"
