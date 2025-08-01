@@ -30,3 +30,6 @@ sha3 = "0.10.8"
 
 [features]
 # streaming = [] # no communication for debugging
+default = ["x86-intrinsics"]
+x86-intrinsics = [] # Enable x86_64 SIMD intrinsics (default)
+no-x86-intrinsics = [] # Disable x86_64 SIMD intrinsics, use fallback implementation

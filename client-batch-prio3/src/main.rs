@@ -31,7 +31,8 @@ pub async fn main() {
         .init();
 
     let prio3_len = options.vec_size as usize;
-    let prio3_chunk_len = options.chunk_size as usize;
+    // Auto-compute optimal chunk size from bitlength and vec_size
+    let prio3_chunk_len = prio::vdaf::prio3::optimal_chunk_length((options.bitlength * options.vec_size) as usize);
     println!("No. of bad clients d = {}", options.num_bad_clients);
 
     let mut rng = rand::thread_rng();

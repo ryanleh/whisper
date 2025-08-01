@@ -1,6 +1,10 @@
+#[cfg(all(feature = "x86-intrinsics", target_arch = "x86_64"))]
 use core::arch::x86_64::{
     __m128i, _mm_add_epi64, _mm_loadu_si128, _mm_set_epi64x, _mm_storeu_si128,
 };
+
+#[cfg(any(not(feature = "x86-intrinsics"), not(target_arch = "x86_64")))]
+type __m128i = [u8; 16]; // Fallback type for non-x86_64 or when x86-intrinsics disabled
 
 use aes::cipher::{generic_array::GenericArray, Block, BlockEncrypt, KeyInit};
 use aes::cipher::{BlockEncryptMut, KeyIvInit};
@@ -447,11 +451,33 @@ impl FixedKeyPrgStream {
 
     // From RustCrypto aesni crate
     #[inline(always)]
+    #[cfg(all(feature = "x86-intrinsics", target_arch = "x86_64"))]
     fn inc_be(v: __m128i) -> __m128i {
         unsafe { _mm_add_epi64(v, _mm_set_epi64x(1, 0)) }
     }
 
     #[inline(always)]
+    #[cfg(any(not(feature = "x86-intrinsics"), not(target_arch = "x86_64")))]
+    fn inc_be(v: __m128i) -> __m128i {
+        let mut result = v;
+        let mut carry = 1u64;
+        for i in (0..16).step_by(8) {
+            let val = u64::from_le_bytes([
+                result[i], result[i + 1], result[i + 2], result[i + 3], 
+                result[i + 4], result[i + 5], result[i + 6], result[i + 7],
+            ]);
+            let (new_val, new_carry) = val.overflowing_add(carry);
+            carry = new_carry as u64;
+            let bytes = new_val.to_le_bytes();
+            for j in 0..8 {
+                result[i + j] = bytes[j];
+            }
+        }
+        result
+    }
+
+    #[inline(always)]
+    #[cfg(all(feature = "x86-intrinsics", target_arch = "x86_64"))]
     fn store(val: __m128i, at: &mut [u8]) {
         debug_assert_eq!(at.len(), AES_BLOCK_SIZE);
 
@@ -461,8 +487,16 @@ impl FixedKeyPrgStream {
         }
     }
 
+    #[inline(always)]
+    #[cfg(any(not(feature = "x86-intrinsics"), not(target_arch = "x86_64")))]
+    fn store(val: __m128i, at: &mut [u8]) {
+        debug_assert_eq!(at.len(), AES_BLOCK_SIZE);
+        at.copy_from_slice(&val);
+    }
+
     // Modified from RustCrypto aesni crate
     #[inline(always)]
+    #[cfg(all(feature = "x86-intrinsics", target_arch = "x86_64"))]
     fn load(key: &[u8; 16]) -> __m128i {
         let val = Block::<Aes128>::from_slice(key);
 
@@ -471,6 +505,14 @@ impl FixedKeyPrgStream {
         unsafe {
             _mm_loadu_si128(val.as_ptr() as *const __m128i)
         }
+    }
+
+    #[inline(always)]
+    #[cfg(any(not(feature = "x86-intrinsics"), not(target_arch = "x86_64")))]
+    fn load(key: &[u8; 16]) -> __m128i {
+        let mut result = [0u8; 16];
+        result.copy_from_slice(key);
+        result
     }
 }
 
@@ -529,6 +571,7 @@ impl HasherStream {
 
     // Modified from RustCrypto aesni crate
     #[inline(always)]
+    #[cfg(all(feature = "x86-intrinsics", target_arch = "x86_64"))]
     fn load4(input: &[[u8; 16]; 4]) -> [__m128i; 4] {
         let vals: Vec<_> = (0..4)
             .map(|i| Block::<Aes128>::from_slice(&input[i]))
@@ -548,6 +591,18 @@ impl HasherStream {
     }
 
     #[inline(always)]
+    #[cfg(any(not(feature = "x86-intrinsics"), not(target_arch = "x86_64")))]
+    fn load4(input: &[[u8; 16]; 4]) -> [__m128i; 4] {
+        [
+            input[0],
+            input[1],
+            input[2],
+            input[3],
+        ]
+    }
+
+    #[inline(always)]
+    #[cfg(all(feature = "x86-intrinsics", target_arch = "x86_64"))]
     fn store(val: __m128i, at: &mut [u8]) {
         debug_assert_eq!(at.len(), AES_BLOCK_SIZE);
 
@@ -555,6 +610,13 @@ impl HasherStream {
         unsafe {
             _mm_storeu_si128(at.as_mut_ptr() as *mut __m128i, val);
         }
+    }
+
+    #[inline(always)]
+    #[cfg(any(not(feature = "x86-intrinsics"), not(target_arch = "x86_64")))]
+    fn store(val: __m128i, at: &mut [u8]) {
+        debug_assert_eq!(at.len(), AES_BLOCK_SIZE);
+        at.copy_from_slice(&val);
     }
 
     fn set_input_blocks(&mut self, bl: &[[u8; 16]; 4]) {

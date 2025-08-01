@@ -6,5 +6,6 @@
     "agg_fn": "sv",
     "chunk_size": 64,
     "vec_size": 128,
+    "bitlength": 16,
     "log_level": "info"
 }

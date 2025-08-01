@@ -22,7 +22,8 @@ async fn batch_send_measurements(
     _rng: &mut impl Rng,
 ) {
     let prio3_len: usize = options.vec_size as usize;
-    let prio3_chunk_len: usize = options.chunk_size as usize;
+    // Auto-compute optimal chunk size from bitlength and vec_size
+    let prio3_chunk_len: usize = prio::vdaf::prio3::optimal_chunk_length((options.bitlength * options.vec_size) as usize);
 
     let prio3: Prio3Gadgets = Prio3Gadgets::new(&options.agg_fn, prio3_len, prio3_chunk_len);
 

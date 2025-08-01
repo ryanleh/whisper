@@ -201,7 +201,8 @@ pub async fn main() {
         .init();
 
     let prio3_len: usize = options.vec_size as usize;
-    let prio3_chunk_len: usize = options.chunk_size as usize;
+    // Auto-compute optimal chunk size from bitlength and vec_size
+    let prio3_chunk_len: usize = prio::vdaf::prio3::optimal_chunk_length((options.bitlength * options.vec_size) as usize);
 
     // if true, we collect all of the clients tags together and check them together.
     // if false, we run group testing on n/NUM_CORES size groups in parallel

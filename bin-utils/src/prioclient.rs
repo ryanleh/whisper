@@ -9,6 +9,7 @@ pub struct Options {
     pub agg_fn: AggFunc,
     pub chunk_size: u32,
     pub vec_size: u32,
+    pub bitlength: u32,
     pub log_level: tracing_core::Level,
 }
 
@@ -45,6 +46,7 @@ impl Options {
         };
         let chunk_size = v["chunk_size"].as_u64().expect("Can't parse chunk_size") as u32;
         let vec_size = v["vec_size"].as_u64().expect("Can't parse vec_size") as u32;
+        let bitlength = v["bitlength"].as_u64().expect("Can't parse bitlength") as u32;
 
         let log_level = match v["log_level"].as_str() {
             Some("debug") => tracing_core::Level::DEBUG,
@@ -63,6 +65,7 @@ impl Options {
             agg_fn,
             chunk_size,
             vec_size,
+            bitlength,
         }
     }
 }

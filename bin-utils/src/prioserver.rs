@@ -11,8 +11,8 @@ pub struct Options {
     pub num_mpc_sockets: usize,
     pub num_bad_clients: usize,
     pub agg_fn: AggFunc,
-    pub chunk_size: u32,
     pub vec_size: u32,
+    pub bitlength: u32,
     pub single_tag: bool,
     pub log_level: tracing_core::Level,
 }
@@ -55,8 +55,8 @@ impl Options {
             "av" => AggFunc::Average,
             _ => panic!("Invalid aggregation function"),
         };
-        let chunk_size = v["chunk_size"].as_u64().expect("Can't parse chunk_size") as u32;
         let vec_size = v["vec_size"].as_u64().expect("Can't parse vec_size") as u32;
+        let bitlength = v["bitlength"].as_u64().expect("Can't parse bitlength") as u32;
         let single_tag = v["single_tag"].as_bool().expect("Can't parse single_tag");
         let log_level = match v["log_level"].as_str() {
             Some("debug") => tracing_core::Level::DEBUG,
@@ -74,8 +74,8 @@ impl Options {
             num_mpc_sockets,
             num_bad_clients,
             agg_fn,
-            chunk_size,
             vec_size,
+            bitlength,
             single_tag,
             log_level,
         }

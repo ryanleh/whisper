@@ -25,5 +25,4 @@ rand = "0.8.5"
 prio = {version = "0.15", path = "../batched-flpcp-rs"}
 
 [features]
-default =  []# ["streaming"]
-streaming = [] # no communication for debugging
+default = []
