@@ -285,8 +285,9 @@ pub async fn main() {
         .collect::<Vec<_>>();
 
     if single_tag {
+        let old_v_comm = peer.num_bytes_sent();
         let client_keys = client_keys.into_par_iter().flatten().collect::<Vec<_>>();
-        let (agg_share, v_comm, passed_count, verif_time)  = run_vdaf_prepare_rayon(
+        let (agg_share, passed_count, verif_time)  = run_vdaf_prepare(
             prio3.clone(),
             verify_key.clone(),
             client_keys,
@@ -297,7 +298,7 @@ pub async fn main() {
         )
         .await
         .unwrap();
-        total_v_comm = v_comm;
+        total_v_comm = peer.num_bytes_sent() - old_v_comm;
         global_aggregate = Some(agg_share);
         clients_passed = passed_count;
         total_verif_time = verif_time;
