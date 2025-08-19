@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::time::Instant;
 
 use bin_utils::prioclient::Options;
 use bin_utils::AggFunc;
@@ -51,6 +52,9 @@ pub async fn main() {
     let conns = batch_meta_clients(NUM_CORES, 0, &options.alice, &options.bob).await;
 
     let handles = FuturesUnordered::new();
+
+    // Start timing for encoding
+    let encoding_start = Instant::now();
 
     let all_keys = (0..NUM_CORES)
         .into_par_iter()
@@ -156,6 +160,22 @@ pub async fn main() {
         })
         .collect::<Vec<_>>();
 
+    let total_encoding_time = encoding_start.elapsed();
+    let total_keys_generated = options.num_clients;
+    let avg_encoding_time = total_encoding_time.as_micros() as f64 / total_keys_generated as f64;
+
+    // Calculate total encoding sizes
+    let total_alice_size: usize = all_keys.iter().map(|(alice_keys, _)| alice_keys.iter().map(|key| key.len()).sum::<usize>()).sum();
+    let total_bob_size: usize = all_keys.iter().map(|(_, bob_keys)| bob_keys.iter().map(|key| key.len()).sum::<usize>()).sum();
+    let avg_alice_size = total_alice_size as f64 / total_keys_generated as f64;
+    let avg_bob_size = total_bob_size as f64 / total_keys_generated as f64;
+
+    println!("CLIENT-BATCH-PRIO3 ENCODING METRICS:");
+    println!("Total clients: {}", total_keys_generated);
+    println!("Total encoding time: {:.2} ms", total_encoding_time.as_millis());
+    println!("Average encoding time per client: {:.2} μs", avg_encoding_time);
+    println!("Helper (Alice) encoding size: {:.0} bytes avg, {} bytes total", avg_alice_size, total_alice_size);
+    println!("Leader (Bob) encoding size: {:.0} bytes avg, {} bytes total", avg_bob_size, total_bob_size);
     info!("Generated keys");
 
     for (i, (alice, bob)) in conns.iter().enumerate() {
