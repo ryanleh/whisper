@@ -170,14 +170,6 @@ pub async fn main() {
     let avg_alice_size = total_alice_size as f64 / total_keys_generated as f64;
     let avg_bob_size = total_bob_size as f64 / total_keys_generated as f64;
 
-    println!("CLIENT-BATCH-PRIO3 ENCODING METRICS:");
-    println!("Total clients: {}", total_keys_generated);
-    println!("Total encoding time: {:.2} ms", total_encoding_time.as_millis());
-    println!("Average encoding time per client: {:.2} μs", avg_encoding_time);
-    println!("Helper (Alice) encoding size: {:.0} bytes avg, {} bytes total", avg_alice_size, total_alice_size);
-    println!("Leader (Bob) encoding size: {:.0} bytes avg, {} bytes total", avg_bob_size, total_bob_size);
-    info!("Generated keys");
-
     for (i, (alice, bob)) in conns.iter().enumerate() {
         let mut alice_idgen = IdGen::new();
         let mut bob_idgen = IdGen::new();
@@ -197,4 +189,12 @@ pub async fn main() {
     for h in handles {
         h.await.unwrap();
     }
+    
+    println!("CLIENT-BATCH-PRIO3 ENCODING METRICS:");
+    println!("Total clients: {}", total_keys_generated);
+    println!("Total encoding time: {:.2} ms", total_encoding_time.as_millis());
+    println!("Average encoding time per client: {:.2} μs", avg_encoding_time);
+    println!("Helper (Alice) encoding size: {:.0} bytes avg, {} bytes total", avg_alice_size, total_alice_size);
+    println!("Leader (Bob) encoding size: {:.0} bytes avg, {} bytes total", avg_bob_size, total_bob_size);
+    info!("Generated keys");
 }
