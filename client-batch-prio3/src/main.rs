@@ -195,6 +195,6 @@ pub async fn main() {
     println!("Total clients: {}", total_keys_generated);
     println!("Total encoding time: {:.2} ms", total_encoding_time.as_millis());
     println!("Average encoding time per client: {:.2} μs", avg_encoding_time);
-    println!("Helper (Alice) encoding size: {:.0} bytes avg, {} bytes total", avg_alice_size, total_alice_size);
-    println!("Leader (Bob) encoding size: {:.0} bytes avg, {} bytes total", avg_bob_size, total_bob_size);
+    println!("Helper (Alice) encoding size: {:.0} KB", avg_alice_size / 1024.0);
+    println!("Leader (Bob) encoding size: {:.0} KB", avg_bob_size / 1024.0);
 }
