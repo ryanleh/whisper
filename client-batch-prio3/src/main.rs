@@ -159,6 +159,7 @@ pub async fn main() {
             (alice_keys, bob_keys)
         })
         .collect::<Vec<_>>();
+    info!("Generated keys");
 
     let total_encoding_time = encoding_start.elapsed();
     let total_keys_generated = options.num_clients;
@@ -196,5 +197,4 @@ pub async fn main() {
     println!("Average encoding time per client: {:.2} μs", avg_encoding_time);
     println!("Helper (Alice) encoding size: {:.0} bytes avg, {} bytes total", avg_alice_size, total_alice_size);
     println!("Leader (Bob) encoding size: {:.0} bytes avg, {} bytes total", avg_bob_size, total_bob_size);
-    info!("Generated keys");
 }
