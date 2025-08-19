@@ -286,7 +286,7 @@ pub async fn main() {
 
     if single_tag {
         let old_v_comm = peer.num_bytes_sent();
-        let client_keys = client_keys.into_par_iter().flatten().collect::<Vec<_>>();
+        let client_keys = client_keys.into_iter().flatten().collect::<Vec<_>>();
         let (agg_share, passed_count, verif_time)  = run_vdaf_prepare(
             prio3.clone(),
             verify_key.clone(),
