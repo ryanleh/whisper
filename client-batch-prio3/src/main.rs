@@ -153,22 +153,6 @@ pub async fn main() {
                         bob_key.nonce[0] += 1u8;
                     }
 
-                    // Debug: Print individual component sizes for first few clients
-                    if cl_id < 5 {
-                        println!("Client {} (bitlength={}):", cl_id, options.bitlength);
-                        println!("  - public_share size: {} bytes", public_share.get_encoded().len());
-                        println!("  - public_share_second size: {} bytes", public_share_second.get_encoded().len());
-                        println!("  - public_proof_0 size: {} bytes", public_proof_0.get_encoded().len());
-                        println!("  - public_proof_1 size: {} bytes", public_proof_1.get_encoded().len());
-                        println!("  - input_share_0[{}] size: {} bytes", alice_id, input_shares_0[alice_id].get_encoded().len());
-                        println!("  - input_share_1[{}] size: {} bytes", alice_id, input_shares_1[alice_id].get_encoded().len());
-                        println!("  - query_rand_blinds[{}] size: {} bytes", alice_id, blinds[alice_id].get_encoded().len());
-                        println!("  - Alice key total: {} bytes", alice_key.get_encoded().len());
-                        println!("  - Bob key total: {} bytes", bob_key.get_encoded().len());
-                        println!("  - num_queries: {}", num_queries);
-                        println!();
-                    }
-
                     (alice_key.get_encoded(), bob_key.get_encoded())
                 })
                 .unzip();
@@ -181,10 +165,7 @@ pub async fn main() {
     let avg_encoding_time = total_encoding_time.as_micros() as f64 / options.num_clients as f64;
 
     // Calculate total encoding sizes
-    let total_alice_size: usize = all_keys.iter().map(|(alice_keys, _)| alice_keys.iter().map(|key| {
-        println!("Key has len: {:?}", key.len());
-        key.len()
-    }).sum::<usize>()).sum();
+    let total_alice_size: usize = all_keys.iter().map(|(alice_keys, _)| alice_keys.iter().map(|key| key.len()).sum::<usize>()).sum();
     let total_bob_size: usize = all_keys.iter().map(|(_, bob_keys)| bob_keys.iter().map(|key| key.len()).sum::<usize>()).sum();
     let avg_alice_size = total_alice_size as f64 / options.num_clients as f64;
     let avg_bob_size = total_bob_size as f64 / options.num_clients as f64;
