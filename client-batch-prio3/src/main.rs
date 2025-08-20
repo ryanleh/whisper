@@ -83,7 +83,7 @@ pub async fn main() {
                     ) = match options.agg_fn {
                         AggFunc::SumVec => {
                             let measurement = (0..prio3_len)
-                                .map(|_| rng.gen_range::<u16, std::range::Range<usize>>(0..1<<options.bitlength) as u128)
+                                .map(|_| rng.gen_range(0..(1u32 << options.bitlength)) as u128)
                                 .collect::<Vec<_>>();
 
                             prio3
