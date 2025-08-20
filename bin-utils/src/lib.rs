@@ -42,7 +42,7 @@ pub struct Prio3Gadgets {
 }
 
 impl Prio3Gadgets {
-    pub fn new(agg_fn: &AggFunc, prio3_len: usize, prio3_chunk_len: usize) -> Self {
+    pub fn new(agg_fn: &AggFunc, prio3_len: usize, prio3_chunk_len: usize, bitlength: usize) -> Self {
         let mut prio3: Prio3Gadgets = Prio3Gadgets {
             prio3sv: None,
             prio3hist: None,
@@ -51,7 +51,7 @@ impl Prio3Gadgets {
         match agg_fn {
             AggFunc::SumVec => {
                 prio3.prio3sv =
-                    Some(Prio3::new_sum_vec_256(2, 16, prio3_len, prio3_chunk_len).unwrap())
+                    Some(Prio3::new_sum_vec_256(2, bitlength, prio3_len, prio3_chunk_len).unwrap())
             }
             AggFunc::Histogram => {
                 prio3.prio3hist =

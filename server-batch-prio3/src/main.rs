@@ -249,7 +249,7 @@ pub async fn main() {
     };
     match options.agg_fn {
         AggFunc::SumVec => {
-            prio3.prio3sv = Some(Prio3::new_sum_vec_256(2, 16, prio3_len, prio3_chunk_len).unwrap())
+            prio3.prio3sv = Some(Prio3::new_sum_vec_256(2, options.bitlength as usize, prio3_len, prio3_chunk_len).unwrap())
         }
         AggFunc::Histogram => {
             prio3.prio3hist = Some(Prio3::new_histogram_256(2, prio3_len, prio3_chunk_len).unwrap())

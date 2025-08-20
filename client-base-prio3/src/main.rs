@@ -25,7 +25,7 @@ async fn batch_send_measurements(
     // Auto-compute optimal chunk size from bitlength and vec_size
     let prio3_chunk_len: usize = prio::vdaf::prio3::optimal_chunk_length((options.bitlength * options.vec_size) as usize);
 
-    let prio3: Prio3Gadgets = Prio3Gadgets::new(&options.agg_fn, prio3_len, prio3_chunk_len);
+    let prio3: Prio3Gadgets = Prio3Gadgets::new(&options.agg_fn, prio3_len, prio3_chunk_len, options.bitlength as usize);
 
     let conns = batch_meta_clients(NUM_CORES, 0, &options.alice, &options.bob).await;
 
@@ -47,7 +47,11 @@ async fn batch_send_measurements(
                     let (public_share, input_shares) = match options.agg_fn {
                         AggFunc::SumVec => {
                             let measurement = (0..prio3_len)
-                                .map(|_| rng.gen::<u16>() as u128)
+                                .map(|_| {
+                                    // Generate a value with the correct bitlength
+                                    let max_value = (1u128 << options.bitlength) - 1;
+                                    rng.gen_range(0..=max_value)
+                                })
                                 .collect::<Vec<_>>();
 
                             prio3

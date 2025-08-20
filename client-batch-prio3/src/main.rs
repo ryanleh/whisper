@@ -38,7 +38,7 @@ pub async fn main() {
 
     let mut rng = rand::thread_rng();
 
-    let prio3: Prio3Gadgets = Prio3Gadgets::new(&options.agg_fn, prio3_len, prio3_chunk_len);
+    let prio3: Prio3Gadgets = Prio3Gadgets::new(&options.agg_fn, prio3_len, prio3_chunk_len, options.bitlength as usize);
 
     let bad_clients = HashSet::<usize>::from_iter(
         (0..options.num_clients)
@@ -151,6 +151,22 @@ pub async fn main() {
                     if bad_clients.contains(&cl_id) {
                         // tamper the keys
                         bob_key.nonce[0] += 1u8;
+                    }
+
+                    // Debug: Print individual component sizes for first few clients
+                    if cl_id < 5 {
+                        println!("Client {} (bitlength={}):", cl_id, options.bitlength);
+                        println!("  - public_share size: {} bytes", public_share.get_encoded().len());
+                        println!("  - public_share_second size: {} bytes", public_share_second.get_encoded().len());
+                        println!("  - public_proof_0 size: {} bytes", public_proof_0.get_encoded().len());
+                        println!("  - public_proof_1 size: {} bytes", public_proof_1.get_encoded().len());
+                        println!("  - input_share_0[{}] size: {} bytes", alice_id, input_shares_0[alice_id].get_encoded().len());
+                        println!("  - input_share_1[{}] size: {} bytes", alice_id, input_shares_1[alice_id].get_encoded().len());
+                        println!("  - query_rand_blinds[{}] size: {} bytes", alice_id, blinds[alice_id].get_encoded().len());
+                        println!("  - Alice key total: {} bytes", alice_key.get_encoded().len());
+                        println!("  - Bob key total: {} bytes", bob_key.get_encoded().len());
+                        println!("  - num_queries: {}", num_queries);
+                        println!();
                     }
 
                     (alice_key.get_encoded(), bob_key.get_encoded())

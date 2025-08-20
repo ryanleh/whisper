@@ -149,7 +149,7 @@ async fn main_with_options(options: Options) {
     // Total number of client messages
     let num_inputs = options.num_clients;
     let mut now;
-    let prio3: Prio3Gadgets = Prio3Gadgets::new(&options.agg_fn, prio3_len, prio3_chunk_len);
+    let prio3: Prio3Gadgets = Prio3Gadgets::new(&options.agg_fn, prio3_len, prio3_chunk_len, options.bitlength as usize);
 
     now = Instant::now();
     let clients = ClientsPool::new(NUM_CORES, &listener).await;
