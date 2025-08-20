@@ -83,7 +83,7 @@ pub async fn main() {
                     ) = match options.agg_fn {
                         AggFunc::SumVec => {
                             let measurement = (0..prio3_len)
-                                .map(|_| rng.gen::<u16>() as u128)
+                                .map(|_| rng.gen_range::<u16, std::range::Range<usize>>(0..1<<options.bitlength) as u128)
                                 .collect::<Vec<_>>();
 
                             prio3
@@ -178,14 +178,16 @@ pub async fn main() {
     info!("Generated keys");
 
     let total_encoding_time = encoding_start.elapsed();
-    let total_keys_generated = options.num_clients;
-    let avg_encoding_time = total_encoding_time.as_micros() as f64 / total_keys_generated as f64;
+    let avg_encoding_time = total_encoding_time.as_micros() as f64 / options.num_clients as f64;
 
     // Calculate total encoding sizes
-    let total_alice_size: usize = all_keys.iter().map(|(alice_keys, _)| alice_keys.iter().map(|key| key.len()).sum::<usize>()).sum();
+    let total_alice_size: usize = all_keys.iter().map(|(alice_keys, _)| alice_keys.iter().map(|key| {
+        println!("Key has len: {:?}", key.len());
+        key.len()
+    }).sum::<usize>()).sum();
     let total_bob_size: usize = all_keys.iter().map(|(_, bob_keys)| bob_keys.iter().map(|key| key.len()).sum::<usize>()).sum();
-    let avg_alice_size = total_alice_size as f64 / total_keys_generated as f64;
-    let avg_bob_size = total_bob_size as f64 / total_keys_generated as f64;
+    let avg_alice_size = total_alice_size as f64 / options.num_clients as f64;
+    let avg_bob_size = total_bob_size as f64 / options.num_clients as f64;
 
     for (i, (alice, bob)) in conns.iter().enumerate() {
         let mut alice_idgen = IdGen::new();
@@ -208,7 +210,7 @@ pub async fn main() {
     }
     
     println!("CLIENT-BATCH-PRIO3 ENCODING METRICS:");
-    println!("Total clients: {}", total_keys_generated);
+    println!("Total clients: {}", options.num_clients);
     println!("Total encoding time: {:.2} ms", total_encoding_time.as_millis());
     println!("Average encoding time per client: {:.2} μs", avg_encoding_time);
     println!("Helper (Alice) encoding size: {:.2} KB", avg_alice_size / 1024.0);

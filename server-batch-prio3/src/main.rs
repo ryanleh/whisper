@@ -338,6 +338,7 @@ pub async fn main() {
         total_verif_time = now.elapsed();
         total_v_comm = peer.num_bytes_sent() - old_v_comm;
     }
+    let aggregation_time = now.elapsed();
 
     info!("Verification comm: {:?}", total_v_comm);
     info!("Verif time: {:?}", total_verif_time);
@@ -413,7 +414,6 @@ pub async fn main() {
         }
     }
 
-    let aggregation_time = now.elapsed();
     info!("Finished aggregation, {:?}", aggregation_time);
     info!(
         "Aggregation comm: {:?}",

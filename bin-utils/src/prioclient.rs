@@ -7,7 +7,6 @@ pub struct Options {
     pub num_clients: usize,
     pub num_bad_clients: u64,
     pub agg_fn: AggFunc,
-    pub chunk_size: u32,
     pub vec_size: u32,
     pub bitlength: u32,
     pub log_level: tracing_core::Level,
@@ -44,7 +43,6 @@ impl Options {
             "av" => AggFunc::Average,
             _ => panic!("Invalid aggregation function"),
         };
-        let chunk_size = v["chunk_size"].as_u64().expect("Can't parse chunk_size") as u32;
         let vec_size = v["vec_size"].as_u64().expect("Can't parse vec_size") as u32;
         let bitlength = v["bitlength"].as_u64().expect("Can't parse bitlength") as u32;
 
@@ -63,7 +61,6 @@ impl Options {
             num_bad_clients,
             log_level,
             agg_fn,
-            chunk_size,
             vec_size,
             bitlength,
         }
