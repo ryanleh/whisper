@@ -12,6 +12,7 @@ clap = { version = "3.0"}
 tokio = { version = "^1.12.0", features = ["full"] }
 rayon = "1.3.1"
 bridge = {version = "0.1.0", path = "../bridge"}
+common = {version = "0.1.0", path = "../common"}
 rand = "0.8.5"
 serialize = {version = "0.1.0", path = "../serialize"}
 tracing = "0.1"

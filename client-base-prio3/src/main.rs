@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use bin_utils::{prioclient::Options, AggFunc};
 use bin_utils::{Prio3Gadgets, SumVecType, SEED_SIZE};
 use bridge::{client_server::batch_meta_clients, id_tracker::IdGen};
+use common::hpke::{encrypt_message, HpkeEnvelope, KeyBatch};
+use common::keys::{aggregator_public_key, decryptor_public_key};
 use futures::stream::FuturesUnordered;
 use prio::codec::Encode;
 use prio::vdaf::prio3::Prio3;
@@ -113,16 +115,29 @@ async fn batch_send_measurements(
 
     info!("Generated keys");
 
+    // Use HPKE encryption with hardcoded keys
+    let alice_pk = aggregator_public_key();
+    let bob_pk = decryptor_public_key();
+
     for (i, (alice, bob)) in conns.iter().enumerate() {
         let mut alice_idgen = IdGen::new();
         let mut bob_idgen = IdGen::new();
+        
+        // Encrypt keys with HPKE
+        let alice_encrypted: Vec<HpkeEnvelope> = all_keys[i].0.iter()
+            .map(|key| encrypt_message(&alice_pk, key).expect("HPKE encryption failed"))
+            .collect();
+        let bob_encrypted: Vec<HpkeEnvelope> = all_keys[i].1.iter()
+            .map(|key| encrypt_message(&bob_pk, key).expect("HPKE encryption failed"))
+            .collect();
+        
         handles.push(
             alice
-                .send_message(alice_idgen.next_send_id(), UseSerde(all_keys[i].0.clone()))
+                .send_message(alice_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(alice_encrypted)))
                 .unwrap(),
         );
         handles.push(
-            bob.send_message(bob_idgen.next_send_id(), UseSerde(all_keys[i].1.clone()))
+            bob.send_message(bob_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(bob_encrypted)))
                 .unwrap(),
         );
 

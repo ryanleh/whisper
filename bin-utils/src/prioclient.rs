@@ -1,6 +1,8 @@
 use crate::AggFunc;
 use clap::{Arg, Command};
+use common::hpke::PublicKey;
 use serde_json::Value;
+
 pub struct Options {
     pub alice: String,
     pub bob: String,
@@ -10,6 +12,10 @@ pub struct Options {
     pub vec_size: u32,
     pub bitlength: u32,
     pub log_level: tracing_core::Level,
+    /// Optional HPKE public key for encrypting messages to Alice
+    pub alice_pk: Option<PublicKey>,
+    /// Optional HPKE public key for encrypting messages to Bob
+    pub bob_pk: Option<PublicKey>,
 }
 
 impl Options {
@@ -54,6 +60,14 @@ impl Options {
             _ => panic!("Invalid log level"),
         };
 
+        // Load optional HPKE public keys for servers
+        let alice_pk = v["alice_pk_path"]
+            .as_str()
+            .map(|path| PublicKey::read_from_file(path).expect("Failed to read Alice's public key"));
+        let bob_pk = v["bob_pk_path"]
+            .as_str()
+            .map(|path| PublicKey::read_from_file(path).expect("Failed to read Bob's public key"));
+
         Options {
             alice: alice.to_string(),
             bob: bob.to_string(),
@@ -63,6 +77,8 @@ impl Options {
             agg_fn,
             vec_size,
             bitlength,
+            alice_pk,
+            bob_pk,
         }
     }
 }

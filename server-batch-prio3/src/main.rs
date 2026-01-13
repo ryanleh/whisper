@@ -5,6 +5,7 @@ use bin_utils::prioserver::Options;
 use bin_utils::{AggFunc, Prio3Gadgets, AVG_BITS, F, SEED_SIZE};
 use bridge::{client_server::ClientsPool, id_tracker::IdGen, mpc_conn::MpcConnection};
 use common::grouptest::{general_binary_split_test, ClientProofTag};
+use common::hpke::KeyBatch;
 use common::prg::Prf;
 use common::VERIFY_KEY_SIZE;
 use futures::stream::FuturesUnordered;
@@ -269,10 +270,25 @@ pub async fn main() {
     let clients = ClientsPool::new(NUM_CORES, &listener).await;
     let mut client_idgen = IdGen::new();
 
-    let client_keys = clients
-        .subscribe_and_get::<UseSerde<Vec<Vec<u8>>>>(client_idgen.next_recv_id())
+    // Receive key batches (may be plaintext or HPKE-encrypted)
+    let key_batches = clients
+        .subscribe_and_get::<UseSerde<KeyBatch>>(client_idgen.next_recv_id())
         .await
         .unwrap();
+    
+    // Decrypt if HPKE-encrypted, or use plaintext directly
+    let client_keys: Vec<Vec<Vec<u8>>> = key_batches
+        .into_iter()
+        .map(|batch| {
+            batch
+                .decrypt(options.hpke_keys.as_ref())
+                .expect("Failed to decrypt client keys")
+        })
+        .collect();
+    
+    if options.hpke_keys.is_some() {
+        info!("Decrypted HPKE-encrypted client keys");
+    }
 
     info!("Key collection: {:?}", now.elapsed());
     info!("Starting aggregation");

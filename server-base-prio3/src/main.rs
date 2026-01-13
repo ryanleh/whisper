@@ -4,6 +4,8 @@ use bin_utils::prioserver::Options;
 use bin_utils::{AggFunc, Prio3Gadgets, F};
 use bridge::id_tracker::ExchangeId;
 use bridge::{client_server::ClientsPool, id_tracker::IdGen, mpc_conn::MpcConnection};
+use common::hpke::KeyBatch;
+use common::keys::{aggregator_keys, decryptor_keys};
 use prio::codec::{Encode, ParameterizedDecode};
 
 use futures::stream::FuturesUnordered;
@@ -155,10 +157,30 @@ async fn main_with_options(options: Options) {
     let clients = ClientsPool::new(NUM_CORES, &listener).await;
     let mut client_idgen = IdGen::new();
 
-    let client_keys = clients
-        .subscribe_and_get::<UseSerde<Vec<Vec<u8>>>>(client_idgen.next_recv_id())
+    // Receive key batches (may be plaintext or HPKE-encrypted)
+    let key_batches = clients
+        .subscribe_and_get::<UseSerde<KeyBatch>>(client_idgen.next_recv_id())
         .await
         .unwrap();
+    
+    // Use HPKE keys - aggregator keys for Alice, decryptor keys for Bob
+    let hpke_keys = if options.is_alice() {
+        aggregator_keys()
+    } else {
+        decryptor_keys()
+    };
+    
+    // Decrypt HPKE-encrypted keys
+    let client_keys: Vec<Vec<Vec<u8>>> = key_batches
+        .into_iter()
+        .map(|batch| {
+            batch
+                .decrypt(Some(&hpke_keys))
+                .expect("Failed to decrypt client keys")
+        })
+        .collect();
+    
+    info!("Decrypted HPKE-encrypted client keys");
 
     info!("Key collection: {:?}", now.elapsed());
 

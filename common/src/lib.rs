@@ -2,6 +2,8 @@ use std::str::Utf8Error;
 
 pub mod group;
 pub mod grouptest;
+pub mod hpke;
+pub mod keys;
 pub mod prg;
 pub mod utils;
 

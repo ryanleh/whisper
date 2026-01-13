@@ -6,6 +6,7 @@ use bin_utils::AggFunc;
 use bin_utils::Prio3Gadgets;
 use bin_utils::SumVecType;
 use bridge::{client_server::batch_meta_clients, id_tracker::IdGen};
+use common::hpke::{encrypt_message, HpkeEnvelope, KeyBatch};
 use futures::stream::FuturesUnordered;
 use prio::codec::Encode;
 use prio::field::Field128;
@@ -189,18 +190,46 @@ pub async fn main() {
     let avg_alice_size = total_alice_size as f64 / options.num_clients as f64;
     let avg_bob_size = total_bob_size as f64 / options.num_clients as f64;
 
+    // Optionally HPKE-encrypt the keys before sending
+    let use_hpke = options.alice_pk.is_some() && options.bob_pk.is_some();
+    
     for (i, (alice, bob)) in conns.iter().enumerate() {
         let mut alice_idgen = IdGen::new();
         let mut bob_idgen = IdGen::new();
-        handles.push(
-            alice
-                .send_message(alice_idgen.next_send_id(), UseSerde(all_keys[i].0.clone()))
-                .unwrap(),
-        );
-        handles.push(
-            bob.send_message(bob_idgen.next_send_id(), UseSerde(all_keys[i].1.clone()))
-                .unwrap(),
-        );
+        
+        if use_hpke {
+            // Encrypt keys with HPKE
+            let alice_pk = options.alice_pk.as_ref().unwrap();
+            let bob_pk = options.bob_pk.as_ref().unwrap();
+            
+            let alice_encrypted: Vec<HpkeEnvelope> = all_keys[i].0.iter()
+                .map(|key| encrypt_message(alice_pk, key).expect("HPKE encryption failed"))
+                .collect();
+            let bob_encrypted: Vec<HpkeEnvelope> = all_keys[i].1.iter()
+                .map(|key| encrypt_message(bob_pk, key).expect("HPKE encryption failed"))
+                .collect();
+            
+            handles.push(
+                alice
+                    .send_message(alice_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(alice_encrypted)))
+                    .unwrap(),
+            );
+            handles.push(
+                bob.send_message(bob_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(bob_encrypted)))
+                    .unwrap(),
+            );
+        } else {
+            // Send plaintext keys (original behavior)
+            handles.push(
+                alice
+                    .send_message(alice_idgen.next_send_id(), UseSerde(KeyBatch::Plain(all_keys[i].0.clone())))
+                    .unwrap(),
+            );
+            handles.push(
+                bob.send_message(bob_idgen.next_send_id(), UseSerde(KeyBatch::Plain(all_keys[i].1.clone())))
+                    .unwrap(),
+            );
+        }
 
         info!("sent id {}", i);
     }

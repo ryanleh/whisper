@@ -1,4 +1,5 @@
 use clap::{Arg, Command};
+use common::hpke::ServerKeys;
 use serde_json::Value;
 
 use crate::AggFunc;
@@ -15,6 +16,8 @@ pub struct Options {
     pub bitlength: u32,
     pub single_tag: bool,
     pub log_level: tracing_core::Level,
+    /// Optional HPKE server keys for decrypting client messages
+    pub hpke_keys: Option<ServerKeys>,
 }
 
 impl Options {
@@ -66,6 +69,11 @@ impl Options {
             _ => panic!("Invalid log level"),
         };
 
+        // Load optional HPKE keys for decrypting client messages
+        let hpke_keys = v["hpke_keys_path"]
+            .as_str()
+            .map(|path| ServerKeys::read_from_file(path).expect("Failed to read HPKE keys"));
+
         Options {
             client_port,
             num_clients,
@@ -78,6 +86,7 @@ impl Options {
             bitlength,
             single_tag,
             log_level,
+            hpke_keys,
         }
     }
 
