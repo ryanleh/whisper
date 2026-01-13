@@ -275,7 +275,10 @@ pub async fn main() {
         .subscribe_and_get::<UseSerde<KeyBatch>>(client_idgen.next_recv_id())
         .await
         .unwrap();
-    
+    info!("Key collection: {:?}", now.elapsed());
+   
+
+    let decrypt_time = Instant::now();
     // Decrypt if HPKE-encrypted, or use plaintext directly - decrypt in parallel
     let client_keys: Vec<Vec<Vec<u8>>> = key_batches
         .into_par_iter()
@@ -285,12 +288,8 @@ pub async fn main() {
                 .expect("Failed to decrypt client keys")
         })
         .collect();
+    info!("Decrypted HPKE-encrypted client keys in {:?}", decrypt_time.elapsed());
     
-    if options.hpke_keys.is_some() {
-        info!("Decrypted HPKE-encrypted client keys");
-    }
-
-    info!("Key collection: {:?}", now.elapsed());
     info!("Starting aggregation");
     now = Instant::now();
     
