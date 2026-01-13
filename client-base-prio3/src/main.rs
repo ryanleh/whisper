@@ -115,29 +115,36 @@ async fn batch_send_measurements(
 
     info!("Generated keys");
 
-    // Use HPKE encryption with hardcoded keys
+    // Use HPKE encryption with hardcoded keys - encrypt all keys in parallel
     let alice_pk = aggregator_public_key();
     let bob_pk = decryptor_public_key();
+
+    let encrypted_keys: Vec<(Vec<HpkeEnvelope>, Vec<HpkeEnvelope>)> = all_keys
+        .into_par_iter()
+        .map(|(alice_keys, bob_keys)| {
+            let alice_encrypted: Vec<HpkeEnvelope> = alice_keys
+                .into_par_iter()
+                .map(|key| encrypt_message(&alice_pk, &key).expect("HPKE encryption failed"))
+                .collect();
+            let bob_encrypted: Vec<HpkeEnvelope> = bob_keys
+                .into_par_iter()
+                .map(|key| encrypt_message(&bob_pk, &key).expect("HPKE encryption failed"))
+                .collect();
+            (alice_encrypted, bob_encrypted)
+        })
+        .collect();
 
     for (i, (alice, bob)) in conns.iter().enumerate() {
         let mut alice_idgen = IdGen::new();
         let mut bob_idgen = IdGen::new();
         
-        // Encrypt keys with HPKE
-        let alice_encrypted: Vec<HpkeEnvelope> = all_keys[i].0.iter()
-            .map(|key| encrypt_message(&alice_pk, key).expect("HPKE encryption failed"))
-            .collect();
-        let bob_encrypted: Vec<HpkeEnvelope> = all_keys[i].1.iter()
-            .map(|key| encrypt_message(&bob_pk, key).expect("HPKE encryption failed"))
-            .collect();
-        
         handles.push(
             alice
-                .send_message(alice_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(alice_encrypted)))
+                .send_message(alice_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(encrypted_keys[i].0.clone())))
                 .unwrap(),
         );
         handles.push(
-            bob.send_message(bob_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(bob_encrypted)))
+            bob.send_message(bob_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(encrypted_keys[i].1.clone())))
                 .unwrap(),
         );
 

@@ -15,6 +15,8 @@ use prio::vdaf::{
     Aggregatable, AggregateShare, Client, Collector, PrepareTransition, VdafError, VdafKey,
 };
 use rand::{thread_rng, Rng};
+use rayon::iter::IntoParallelIterator;
+use rayon::prelude::ParallelIterator;
 use serialize::{Communicate, UseSerde};
 use tokio::net::TcpListener;
 use tracing::info;
@@ -170,9 +172,9 @@ async fn main_with_options(options: Options) {
         decryptor_keys()
     };
     
-    // Decrypt HPKE-encrypted keys
+    // Decrypt HPKE-encrypted keys in parallel
     let client_keys: Vec<Vec<Vec<u8>>> = key_batches
-        .into_iter()
+        .into_par_iter()
         .map(|batch| {
             batch
                 .decrypt(Some(&hpke_keys))

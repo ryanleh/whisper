@@ -174,33 +174,48 @@ pub async fn main() {
     // Optionally HPKE-encrypt the keys before sending
     let use_hpke = options.alice_pk.is_some() && options.bob_pk.is_some();
     
-    for (i, (alice, bob)) in conns.iter().enumerate() {
-        let mut alice_idgen = IdGen::new();
-        let mut bob_idgen = IdGen::new();
+    if use_hpke {
+        // Encrypt all keys in parallel
+        let alice_pk = options.alice_pk.as_ref().unwrap();
+        let bob_pk = options.bob_pk.as_ref().unwrap();
         
-        if use_hpke {
-            // Encrypt keys with HPKE
-            let alice_pk = options.alice_pk.as_ref().unwrap();
-            let bob_pk = options.bob_pk.as_ref().unwrap();
-            
-            let alice_encrypted: Vec<HpkeEnvelope> = all_keys[i].0.iter()
-                .map(|key| encrypt_message(alice_pk, key).expect("HPKE encryption failed"))
-                .collect();
-            let bob_encrypted: Vec<HpkeEnvelope> = all_keys[i].1.iter()
-                .map(|key| encrypt_message(bob_pk, key).expect("HPKE encryption failed"))
-                .collect();
+        let encrypted_keys: Vec<(Vec<HpkeEnvelope>, Vec<HpkeEnvelope>)> = all_keys
+            .into_par_iter()
+            .map(|(alice_keys, bob_keys)| {
+                let alice_encrypted: Vec<HpkeEnvelope> = alice_keys
+                    .into_par_iter()
+                    .map(|key| encrypt_message(alice_pk, &key).expect("HPKE encryption failed"))
+                    .collect();
+                let bob_encrypted: Vec<HpkeEnvelope> = bob_keys
+                    .into_par_iter()
+                    .map(|key| encrypt_message(bob_pk, &key).expect("HPKE encryption failed"))
+                    .collect();
+                (alice_encrypted, bob_encrypted)
+            })
+            .collect();
+        
+        for (i, (alice, bob)) in conns.iter().enumerate() {
+            let mut alice_idgen = IdGen::new();
+            let mut bob_idgen = IdGen::new();
             
             handles.push(
                 alice
-                    .send_message(alice_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(alice_encrypted)))
+                    .send_message(alice_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(encrypted_keys[i].0.clone())))
                     .unwrap(),
             );
             handles.push(
-                bob.send_message(bob_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(bob_encrypted)))
+                bob.send_message(bob_idgen.next_send_id(), UseSerde(KeyBatch::Encrypted(encrypted_keys[i].1.clone())))
                     .unwrap(),
             );
-        } else {
-            // Send plaintext keys (original behavior)
+            
+            info!("sent id {}", i);
+        }
+    } else {
+        // Send plaintext keys (original behavior)
+        for (i, (alice, bob)) in conns.iter().enumerate() {
+            let mut alice_idgen = IdGen::new();
+            let mut bob_idgen = IdGen::new();
+            
             handles.push(
                 alice
                     .send_message(alice_idgen.next_send_id(), UseSerde(KeyBatch::Plain(all_keys[i].0.clone())))
@@ -210,9 +225,9 @@ pub async fn main() {
                 bob.send_message(bob_idgen.next_send_id(), UseSerde(KeyBatch::Plain(all_keys[i].1.clone())))
                     .unwrap(),
             );
+            
+            info!("sent id {}", i);
         }
-
-        info!("sent id {}", i);
     }
 
     for h in handles {

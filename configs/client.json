@@ -1,10 +1,10 @@
 {
     "alice": "localhost:6666",
     "bob": "localhost:6667",
-    "num_clients": 100000,
+    "num_clients": 1000,
     "num_bad_clients": 0,
     "agg_fn": "sv",
-    "vec_size": 1,
-    "bitlength": 64,
+    "vec_size": 32,
+    "bitlength": 1,
     "log_level": "info"
 }

@@ -276,9 +276,9 @@ pub async fn main() {
         .await
         .unwrap();
     
-    // Decrypt if HPKE-encrypted, or use plaintext directly
+    // Decrypt if HPKE-encrypted, or use plaintext directly - decrypt in parallel
     let client_keys: Vec<Vec<Vec<u8>>> = key_batches
-        .into_iter()
+        .into_par_iter()
         .map(|batch| {
             batch
                 .decrypt(options.hpke_keys.as_ref())
@@ -303,7 +303,7 @@ pub async fn main() {
     if single_tag {
         let old_v_comm = peer.num_bytes_sent();
         let client_keys = client_keys.into_iter().flatten().collect::<Vec<_>>();
-        let (agg_share, passed_count, verif_time)  = run_vdaf_prepare(
+        let (agg_share, _comm, passed_count, verif_time)  = run_vdaf_prepare_rayon(
             prio3.clone(),
             verify_key.clone(),
             client_keys,
@@ -328,7 +328,7 @@ pub async fn main() {
                 let tmp_peer = peer.clone();
                 let tmp_agg_func = options.agg_fn.clone();
                 tokio::spawn(async move {
-                    run_vdaf_prepare(
+                    run_vdaf_prepare_rayon(
                         tmp_prio3,
                         verify_key.clone(),
                         client_keys_batch,
@@ -343,7 +343,7 @@ pub async fn main() {
             .collect::<FuturesUnordered<_>>();
 
         for handle in handles {
-            let (agg_share, passed_count, _verif_time) = handle.await.unwrap().unwrap();
+            let (agg_share, _comm, passed_count, _verif_time) = handle.await.unwrap().unwrap();
             clients_passed += passed_count;
             if let Some(ref mut inner) = global_aggregate {
                 inner.merge(&agg_share).unwrap();

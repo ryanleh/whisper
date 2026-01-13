@@ -1,13 +1,13 @@
 {
     "client_port": 6667,
-    "num_clients": 100000,
+    "num_clients": 1000,
     "is_bob": true,
     "mpc_addr": "localhost:7777",
     "num_mpc_sockets": 32,
     "num_bad_clients": 0,
     "agg_fn": "sv",
     "single_tag": false,
-    "vec_size": 1,
-    "bitlength": 64,
+    "vec_size": 32,
+    "bitlength": 1,
     "log_level": "info"
 }
