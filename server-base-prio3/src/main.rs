@@ -171,7 +171,9 @@ async fn main_with_options(options: Options) {
     } else {
         decryptor_keys()
     };
-    
+    info!("Key collection: {:?}", now.elapsed());
+   
+    let decrypt_time = Instant::now();
     // Decrypt HPKE-encrypted keys in parallel
     let client_keys: Vec<Vec<Vec<u8>>> = key_batches
         .into_par_iter()
@@ -181,10 +183,8 @@ async fn main_with_options(options: Options) {
                 .expect("Failed to decrypt client keys")
         })
         .collect();
-    
-    info!("Decrypted HPKE-encrypted client keys");
+    info!("Decrypted HPKE-encrypted client keys in {:?}", decrypt_time.elapsed());
 
-    info!("Key collection: {:?}", now.elapsed());
 
     info!("Starting aggregation");
     now = Instant::now();
