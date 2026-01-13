@@ -5,6 +5,6 @@
     "num_bad_clients": 0,
     "agg_fn": "sv",
     "vec_size": 1,
-    "bitlength": 1,
+    "bitlength": 64,
     "log_level": "info"
 }

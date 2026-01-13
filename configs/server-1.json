@@ -8,6 +8,6 @@
     "agg_fn": "sv",
     "single_tag": false,
     "vec_size": 1,
-    "bitlength": 1,
+    "bitlength": 64,
     "log_level": "info"
 }
